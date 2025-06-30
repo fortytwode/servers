@@ -1,0 +1,56 @@
+{
+  "name": "facebook-ads-mcp-server",
+  "version": "1.0.0",
+  "description": "Facebook Ads Model Context Protocol Server - Access Facebook advertising data through MCP",
+  "type": "module",
+  "main": "src/index.js",
+  "bin": {
+    "facebook-ads-mcp": "src/index.js"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "test": "node test.js",
+    "prepublishOnly": "npm test"
+  },
+  "keywords": [
+    "mcp", 
+    "facebook", 
+    "ads", 
+    "marketing", 
+    "api", 
+    "claude", 
+    "model-context-protocol",
+    "advertising",
+    "analytics",
+    "insights"
+  ],
+  "author": "Shamanth M. Rao",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fortytwode/10xer.git"
+  },
+  "homepage": "https://github.com/fortytwode/10xer#readme",
+  "bugs": {
+    "url": "https://github.com/fortytwode/10xer/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "src/**/*",
+    "README.md",
+    "mcp.json",
+    ".env.example"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.4.0",
+    "axios": "^1.6.0",
+    "dotenv": "^16.3.0",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

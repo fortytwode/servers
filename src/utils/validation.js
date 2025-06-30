@@ -1,0 +1,57 @@
+import { z } from 'zod';
+
+// Validation schemas for tool parameters
+export const ValidationSchemas = {
+  paginationUrl: z.object({
+    url: z.string().url('Invalid URL format'),
+  }),
+
+  accountDetails: z.object({
+    act_id: z.string().min(1, 'act_id is required'),
+    fields: z.array(z.string()).optional(),
+  }),
+
+  accountInsights: z.object({
+    act_id: z.string().min(1, 'act_id is required'),
+    fields: z.array(z.string()).min(1, 'At least one field is required'),
+    date_preset: z.string().optional(),
+    level: z.string().optional(),
+    action_attribution_windows: z.array(z.string()).optional(),
+    action_breakdowns: z.array(z.string()).optional(),
+    breakdowns: z.array(z.string()).optional(),
+    time_range: z.object({
+      since: z.string(),
+      until: z.string(),
+    }).optional(),
+    limit: z.number().positive().optional(),
+    sort: z.string().optional(),
+    after: z.string().optional(),
+    before: z.string().optional(),
+  }),
+
+  accountActivities: z.object({
+    act_id: z.string().min(1, 'act_id is required'),
+    fields: z.array(z.string()).optional(),
+    since: z.string().optional(),
+    until: z.string().optional(),
+    time_range: z.object({
+      since: z.string(),
+      until: z.string(),
+    }).optional(),
+    limit: z.number().positive().optional(),
+    after: z.string().optional(),
+    before: z.string().optional(),
+  }),
+};
+
+export function validateParameters(schema, params) {
+  try {
+    return schema.parse(params);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      const messages = error.errors.map(err => `${err.path.join('.')}: ${err.message}`);
+      throw new Error(`Validation error: ${messages.join(', ')}`);
+    }
+    throw error;
+  }
+}

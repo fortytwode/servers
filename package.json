@@ -1,16 +1,21 @@
 {
   "name": "facebook-ads-mcp-server",
-  "version": "1.2.2",
-  "description": "Facebook Ads Model Context Protocol Server - Access Facebook advertising data through MCP",
+  "version": "2.1.0",
+  "description": "Universal Facebook Ads Server - Supports MCP, OpenAI Function Calling, and Gemini Function Calling",
   "type": "module",
   "main": "src/index.js",
   "bin": {
-    "facebook-ads-mcp": "src/index.js"
+    "facebook-ads-mcp": "src/index.js",
+    "facebook-ads-universal": "src/universal-server.js"
   },
   "scripts": {
     "start": "node src/index.js",
+    "start:universal": "node src/universal-server.js",
+    "start:api": "SERVER_MODE=api node src/universal-server.js",
+    "start:both": "SERVER_MODE=both node src/universal-server.js",
     "dev": "node --watch src/index.js",
-    "test": "node test.js",
+    "dev:universal": "node --watch src/universal-server.js",
+    "test": "NODE_ENV=test node test.js",
     "prepublishOnly": "npm test"
   },
   "keywords": [
@@ -20,10 +25,15 @@
     "marketing",
     "api",
     "claude",
+    "openai",
+    "gemini",
+    "function-calling",
     "model-context-protocol",
     "advertising",
     "analytics",
-    "insights"
+    "insights",
+    "universal",
+    "multi-protocol"
   ],
   "author": "Shamanth M. Rao",
   "license": "MIT",
@@ -47,12 +57,13 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^0.4.0",
     "axios": "^1.6.0",
+    "cors": "^2.8.5",
     "dotenv": "^16.3.0",
-    "zod": "^3.22.0",
     "express": "^4.18.2",
     "keytar": "^7.9.0",
     "open": "^9.1.0",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "zod": "^3.22.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

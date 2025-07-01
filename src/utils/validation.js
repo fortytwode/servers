@@ -51,6 +51,20 @@ export const ValidationSchemas = {
     date_range_days: z.number().optional(),
     limit: z.number().optional(),
   }),
+
+  adThumbnails: z.object({
+    ad_ids: z.array(z.string()).min(1, 'At least one ad ID is required'),
+    resolution: z.enum(['thumbnail', 'full', 'all']).optional(),
+    include_ad_details: z.boolean().optional(),
+  }),
+
+  adThumbnailsEmbedded: z.object({
+    ad_ids: z.array(z.string()).min(1, 'At least one ad ID is required'),
+    resolution: z.enum(['thumbnail', 'full', 'all']).optional(),
+    include_ad_details: z.boolean().optional(),
+    cache_duration_hours: z.number().min(1).max(168).optional(), // 1 hour to 1 week
+    max_image_size_mb: z.number().min(0.1).max(10).optional(), // 100KB to 10MB
+  }),
 };
 
 export function validateParameters(schema, params) {

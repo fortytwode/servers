@@ -21,8 +21,11 @@ export class FacebookAPIClient {
       return storedToken;
     }
 
-    // Fall back to environment variable (for backward compatibility during transition)
-    if (process.env.FACEBOOK_ACCESS_TOKEN) {
+    // Only allow hardcoded token for testing purposes
+    const isTestMode = process.env.NODE_ENV === 'test' || process.env.FACEBOOK_ALLOW_HARDCODED_TOKEN === 'true';
+    
+    if (isTestMode && process.env.FACEBOOK_ACCESS_TOKEN) {
+      console.error('⚠️  Using hardcoded access token (TEST MODE ONLY)');
       this.accessToken = process.env.FACEBOOK_ACCESS_TOKEN;
       return this.accessToken;
     }

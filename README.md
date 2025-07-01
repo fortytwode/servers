@@ -60,6 +60,7 @@ Once configured, you can ask Claude things like:
 - **OAuth Login**: Secure browser-based Facebook authentication
 - **Token Management**: Automatic secure token storage and retrieval
 - **Session Management**: Login, logout, and authentication status checking
+- **Production Security**: Hardcoded tokens only allowed in test mode (NODE_ENV=test)
 
 ### **Facebook Ads Data**
 - **List Ad Accounts**: Get all accessible Facebook ad accounts

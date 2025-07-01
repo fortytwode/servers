@@ -17,6 +17,7 @@ class MCPTester {
       stdio: ['pipe', 'pipe', 'inherit'],
       env: {
         ...process.env,
+        NODE_ENV: 'test', // Enable hardcoded token for testing
         FACEBOOK_ACCESS_TOKEN: process.env.FACEBOOK_ACCESS_TOKEN || 'test_token'
       }
     });

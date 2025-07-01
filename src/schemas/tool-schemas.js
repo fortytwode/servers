@@ -164,4 +164,36 @@ export const TOOL_SCHEMAS = {
     required: ['act_id'],
     additionalProperties: false,
   },
+
+  facebook_get_ad_creatives: {
+    type: 'object',
+    properties: {
+      act_id: {
+        type: 'string',
+        description: 'The ad account ID, prefixed with act_',
+      },
+      min_purchase_events: {
+        type: 'number',
+        description: 'Minimum number of fb_mobile_purchase events required (default: 10)',
+      },
+      max_cost_per_purchase: {
+        type: 'number',
+        description: 'Maximum cost per purchase threshold (default: 50)',
+      },
+      include_images: {
+        type: 'boolean',
+        description: 'Whether to include thumbnail URLs (default: true)',
+      },
+      date_range_days: {
+        type: 'number',
+        description: 'Number of days to look back for performance data (default: 730)',
+      },
+      limit: {
+        type: 'number',
+        description: 'Maximum number of ads to analyze (default: 50)',
+      },
+    },
+    required: ['act_id'],
+    additionalProperties: false,
+  },
 };

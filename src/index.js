@@ -11,6 +11,7 @@ import { fetchPaginationUrl } from './tools/fetch-pagination.js';
 import { getAccountDetails } from './tools/get-account-details.js';
 import { getAccountInsights } from './tools/get-account-insights.js';
 import { getAccountActivities } from './tools/get-account-activities.js';
+import { getAdCreatives } from './tools/get-ad-creatives.js';
 import { facebookLogin } from './tools/facebook-login.js';
 import { facebookLogout } from './tools/facebook-logout.js';
 import { facebookCheckAuth } from './tools/facebook-check-auth.js';
@@ -80,6 +81,11 @@ class FacebookAdsMCPServer {
             description: 'Retrieves activities for a Facebook ad account',
             inputSchema: TOOL_SCHEMAS.facebook_get_activities_by_adaccount,
           },
+          {
+            name: 'facebook_get_ad_creatives',
+            description: 'Get high-performing ad creatives with thumbnails and performance metrics',
+            inputSchema: TOOL_SCHEMAS.facebook_get_ad_creatives,
+          },
         ],
       };
     });
@@ -113,6 +119,9 @@ class FacebookAdsMCPServer {
 
           case 'facebook_get_activities_by_adaccount':
             return await getAccountActivities(args);
+
+          case 'facebook_get_ad_creatives':
+            return await getAdCreatives(args);
 
           default:
             throw new Error(`Unknown tool: ${name}`);

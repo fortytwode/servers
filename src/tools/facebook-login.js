@@ -46,29 +46,9 @@ To get these credentials:
       await oauthServer.start(3002);
     }
 
-    return {
-      content: [
-        {
-          type: 'text',
-          text: '🌐 Opening Facebook login in your browser...\n\nIf the browser doesn\'t open automatically, I\'ll provide the login URL.\n\nPlease complete the Facebook login process and grant the necessary permissions for ads management.',
-        },
-      ],
-    };
+    // Start the OAuth flow immediately
+    await oauthServer.startOAuthFlow();
 
-  } catch (error) {
-    return createErrorResponse(error);
-  }
-}
-
-export async function completeFacebookLogin() {
-  try {
-    if (!oauthServer) {
-      throw new Error('OAuth server not started. Please run facebook_login first.');
-    }
-
-    // Start the OAuth flow
-    const tokenResponse = await oauthServer.startOAuthFlow();
-    
     return {
       content: [
         {
@@ -82,3 +62,4 @@ export async function completeFacebookLogin() {
     return createErrorResponse(error);
   }
 }
+

@@ -91,9 +91,7 @@ class FacebookAdsMCPServer {
       try {
         switch (name) {
           case 'facebook_login':
-            // Start OAuth flow and wait for completion
-            await facebookLogin(args);
-            return await completeFacebookLogin();
+            return await facebookLogin(args);
 
           case 'facebook_logout':
             return await facebookLogout(args);

@@ -387,6 +387,94 @@ npm test
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
+## 🗺️ Roadmap
+
+### Current Status: v1.1.3 ✅
+- OAuth 2.0 authentication with browser login
+- 5 core Facebook Ads API tools 
+- Secure token storage and management
+- Claude Desktop integration
+
+### 🎯 Planned Features
+
+#### **Priority 1: Creative Insights & Thumbnails** 🖼️
+**Timeline**: 1-2 weeks  
+**Status**: Planning
+
+- **New Tool**: `facebook_get_ad_creatives`
+- **Visual Analysis**: Ad creative thumbnails with performance metrics
+- **Creative Types**: Support for image ads (videos in future releases)
+- **Performance Correlation**: Link creative elements to campaign performance
+- **Implementation**: Direct thumbnail URLs from Facebook API
+
+**Use Cases**:
+- "Show me my top-performing ad creatives with thumbnails"
+- "Which creative formats have the best CTR?"
+- "Analyze creative performance by visual elements"
+
+#### **Priority 2: Pre-formatted Notion Reports** 📊
+**Timeline**: 1 week after creative insights  
+**Status**: Planned
+
+- **Export Formats**: Structured data ready for Notion import
+- **Report Templates**: Campaign performance, creative analysis, account summaries
+- **Automation**: Generate reports with charts and insights
+- **Integration**: Direct Notion API connectivity (future)
+
+**Use Cases**:
+- "Generate a campaign performance report for Notion"
+- "Create a weekly ad account summary with insights"
+- "Export creative analysis with recommendations"
+
+#### **Priority 3: Multi-Platform Tool Calling** 🌐
+**Timeline**: 1-2 months  
+**Status**: Research phase
+
+- **OpenAI Integration**: REST API endpoints for GPT tool calling
+- **Gemini Support**: Google AI platform compatibility  
+- **Unified API**: Single backend serving multiple AI platforms
+- **Documentation**: Platform-specific setup guides
+
+**Technical Approach**:
+- Dual architecture: MCP server + REST API
+- Shared business logic and Facebook API client
+- Platform-specific authentication handling
+
+### 🔮 Future Considerations
+
+#### **Advanced Analytics** 📈
+- Cohort analysis and attribution modeling
+- Predictive performance insights
+- Automated optimization recommendations
+- Cross-platform attribution (Facebook + Google Ads)
+
+#### **Enhanced Media Support** 🎥
+- Video ad thumbnails and preview frames
+- Carousel ad analysis with multiple images
+- Dynamic creative optimization insights
+- A/B testing automation and analysis
+
+#### **Enterprise Features** 🏢
+- Multi-account management dashboard
+- Team collaboration and permissions
+- Custom reporting and data exports
+- Advanced security and compliance features
+
+### 📊 Development Priorities
+
+| Feature | Business Value | Technical Complexity | User Demand | Priority Score |
+|---------|---------------|---------------------|-------------|----------------|
+| Creative Thumbnails | High | Medium | High | **9.5/10** |
+| Notion Reports | High | Medium | Medium | **8.5/10** |
+| OpenAI/Gemini | Medium | High | Medium | **6.5/10** |
+| Video Support | Medium | High | Low | **5.0/10** |
+
+### 🤝 Contributing
+
+We welcome contributions to help build these features! Check our [GitHub Issues](https://github.com/fortytwode/10xer/issues) for current development tasks.
+
+---
+
 ## 📄 License
 
 MIT License

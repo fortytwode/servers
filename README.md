@@ -389,32 +389,34 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 🗺️ Roadmap
 
-### Current Status: v1.1.3 ✅
+### Current Status: v1.2.0 ✅
 - OAuth 2.0 authentication with browser login
-- 5 core Facebook Ads API tools 
+- 6 core Facebook Ads API tools including **Creative Insights**
+- **NEW**: Ad creative thumbnails with performance analysis
 - Secure token storage and management
 - Claude Desktop integration
 
 ### 🎯 Planned Features
 
-#### **Priority 1: Creative Insights & Thumbnails** 🖼️
-**Timeline**: 1-2 weeks  
-**Status**: Planning
+#### **✅ COMPLETED: Creative Insights & Thumbnails** 🖼️
+**Status**: ✅ **Released in v1.2.0**
 
-- **New Tool**: `facebook_get_ad_creatives`
-- **Visual Analysis**: Ad creative thumbnails with performance metrics
-- **Creative Types**: Support for image ads (videos in future releases)
-- **Performance Correlation**: Link creative elements to campaign performance
-- **Implementation**: Direct thumbnail URLs from Facebook API
+- ✅ **New Tool**: `facebook_get_ad_creatives`
+- ✅ **Visual Analysis**: Ad creative thumbnails with performance metrics
+- ✅ **Creative Types**: Support for image ads, video detection
+- ✅ **Performance Correlation**: Link creative elements to campaign performance
+- ✅ **Implementation**: Direct thumbnail URLs from Facebook API
+- ✅ **Filtering**: Performance-based filtering (min purchases, max cost per purchase)
+- ✅ **Batch Processing**: Efficient batch API requests for large datasets
 
-**Use Cases**:
+**Live Use Cases**:
 - "Show me my top-performing ad creatives with thumbnails"
-- "Which creative formats have the best CTR?"
+- "Which creative formats have the best cost per purchase?"
 - "Analyze creative performance by visual elements"
 
-#### **Priority 2: Pre-formatted Notion Reports** 📊
-**Timeline**: 1 week after creative insights  
-**Status**: Planned
+#### **Priority 1: Pre-formatted Notion Reports** 📊
+**Timeline**: Current priority  
+**Status**: **Next Up**
 
 - **Export Formats**: Structured data ready for Notion import
 - **Report Templates**: Campaign performance, creative analysis, account summaries
@@ -426,7 +428,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 - "Create a weekly ad account summary with insights"
 - "Export creative analysis with recommendations"
 
-#### **Priority 3: Multi-Platform Tool Calling** 🌐
+#### **Priority 2: Multi-Platform Tool Calling** 🌐
 **Timeline**: 1-2 months  
 **Status**: Research phase
 

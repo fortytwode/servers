@@ -1,6 +1,6 @@
 {
   "name": "facebook-ads-mcp-server",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Facebook Ads Model Context Protocol Server - Access Facebook advertising data through MCP",
   "type": "module",
   "main": "src/index.js",
@@ -14,12 +14,12 @@
     "prepublishOnly": "npm test"
   },
   "keywords": [
-    "mcp", 
-    "facebook", 
-    "ads", 
-    "marketing", 
-    "api", 
-    "claude", 
+    "mcp",
+    "facebook",
+    "ads",
+    "marketing",
+    "api",
+    "claude",
     "model-context-protocol",
     "advertising",
     "analytics",

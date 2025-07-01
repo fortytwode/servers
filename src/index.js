@@ -11,7 +11,7 @@ import { fetchPaginationUrl } from './tools/fetch-pagination.js';
 import { getAccountDetails } from './tools/get-account-details.js';
 import { getAccountInsights } from './tools/get-account-insights.js';
 import { getAccountActivities } from './tools/get-account-activities.js';
-import { facebookLogin, completeFacebookLogin } from './tools/facebook-login.js';
+import { facebookLogin } from './tools/facebook-login.js';
 import { facebookLogout } from './tools/facebook-logout.js';
 import { facebookCheckAuth } from './tools/facebook-check-auth.js';
 

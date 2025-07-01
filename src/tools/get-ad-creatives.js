@@ -1,6 +1,5 @@
 import { FacebookAPIClient } from '../utils/facebook-api.js';
 import { ValidationSchemas, validateParameters } from '../utils/validation.js';
-import { z } from 'zod';
 import { createErrorResponse } from '../utils/error-handler.js';
 
 /**
@@ -9,18 +8,8 @@ import { createErrorResponse } from '../utils/error-handler.js';
  */
 export async function getAdCreatives(args) {
   try {
-    // Create validation schema for ad creatives
-    const adCreativesSchema = z.object({
-      act_id: z.string().min(1, 'act_id is required'),
-      min_purchase_events: z.number().optional(),
-      max_cost_per_purchase: z.number().optional(),
-      include_images: z.boolean().optional(),
-      date_range_days: z.number().optional(),
-      limit: z.number().optional(),
-    });
-
-    // Validate parameters
-    const validatedArgs = validateParameters(adCreativesSchema, args);
+    // Validate parameters using existing validation pattern
+    const validatedArgs = validateParameters(ValidationSchemas.adCreatives, args);
 
     const {
       act_id,

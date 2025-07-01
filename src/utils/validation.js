@@ -42,6 +42,15 @@ export const ValidationSchemas = {
     after: z.string().optional(),
     before: z.string().optional(),
   }),
+
+  adCreatives: z.object({
+    act_id: z.string().min(1, 'act_id is required'),
+    min_purchase_events: z.number().optional(),
+    max_cost_per_purchase: z.number().optional(),
+    include_images: z.boolean().optional(),
+    date_range_days: z.number().optional(),
+    limit: z.number().optional(),
+  }),
 };
 
 export function validateParameters(schema, params) {

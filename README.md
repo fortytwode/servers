@@ -12,9 +12,14 @@ A Model Context Protocol (MCP) server that provides Facebook Ads functionality f
 npm install -g facebook-ads-mcp-server
 ```
 
-### 2. Get Your Facebook Access Token
-1. Go to [Facebook Graph API Explorer](https://developers.facebook.com/tools/explorer/)
-2. Generate a token with these permissions: `ads_read`, `ads_management`, `business_management`
+### 2. Create Facebook Developer App
+1. Go to [Facebook Developers](https://developers.facebook.com/apps/)
+2. Create a new app or use existing one
+3. Add "Facebook Login" product
+4. Configure OAuth settings:
+   - **Client OAuth Login**: ON
+   - **Web OAuth Login**: ON  
+   - **Valid OAuth Redirect URIs**: `http://localhost:3002/auth/callback`
 
 ### 3. Configure Claude Desktop
 Add this to your Claude Desktop MCP settings:
@@ -25,7 +30,9 @@ Add this to your Claude Desktop MCP settings:
     "facebook-ads": {
       "command": "facebook-ads-mcp",
       "env": {
-        "FACEBOOK_ACCESS_TOKEN": "your_facebook_access_token_here"
+        "FACEBOOK_APP_ID": "your_facebook_app_id",
+        "FACEBOOK_APP_SECRET": "your_facebook_app_secret",
+        "FACEBOOK_REDIRECT_URI": "http://localhost:3002/auth/callback"
       }
     }
   }
@@ -39,19 +46,27 @@ After adding the configuration, restart Claude Desktop and start asking about yo
 
 Once configured, you can ask Claude things like:
 
+- *"Login to Facebook"* (OAuth flow will open in browser)
+- *"Check my Facebook authentication status"*
 - *"Show me all my Facebook ad accounts"*
 - *"What's the current balance and status of my main ad account?"*
 - *"Get performance insights for my ad account for the last 30 days"*
 - *"Show me recent activities on account act_123456"*
-- *"What were the impressions and clicks for my campaigns last week?"*
+- *"Logout from Facebook"*
 
 ## ✨ Features
 
+### **Authentication**
+- **OAuth Login**: Secure browser-based Facebook authentication
+- **Token Management**: Automatic secure token storage and retrieval
+- **Session Management**: Login, logout, and authentication status checking
+
+### **Facebook Ads Data**
 - **List Ad Accounts**: Get all accessible Facebook ad accounts
-- **Fetch Pagination**: Retrieve data from Facebook Graph API pagination URLs
-- **Account Details**: Get detailed information about specific ad accounts
+- **Account Details**: Get detailed information about specific ad accounts  
 - **Account Insights**: Retrieve performance metrics and analytics data
 - **Account Activities**: Get activity logs for ad accounts
+- **Pagination Support**: Handle large datasets with automatic pagination
 
 ## Installation
 

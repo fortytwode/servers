@@ -11,6 +11,9 @@ import { fetchPaginationUrl } from './tools/fetch-pagination.js';
 import { getAccountDetails } from './tools/get-account-details.js';
 import { getAccountInsights } from './tools/get-account-insights.js';
 import { getAccountActivities } from './tools/get-account-activities.js';
+import { facebookLogin, completeFacebookLogin } from './tools/facebook-login.js';
+import { facebookLogout } from './tools/facebook-logout.js';
+import { facebookCheckAuth } from './tools/facebook-check-auth.js';
 
 // Import schemas
 import { TOOL_SCHEMAS } from './schemas/tool-schemas.js';
@@ -37,6 +40,21 @@ class FacebookAdsMCPServer {
     this.server.setRequestHandler(ListToolsRequestSchema, async () => {
       return {
         tools: [
+          {
+            name: 'facebook_login',
+            description: 'Login to Facebook using OAuth to authenticate and access ad accounts',
+            inputSchema: TOOL_SCHEMAS.facebook_login,
+          },
+          {
+            name: 'facebook_logout',
+            description: 'Logout from Facebook and clear stored credentials',
+            inputSchema: TOOL_SCHEMAS.facebook_logout,
+          },
+          {
+            name: 'facebook_check_auth',
+            description: 'Check current Facebook authentication status and token validity',
+            inputSchema: TOOL_SCHEMAS.facebook_check_auth,
+          },
           {
             name: 'facebook_list_ad_accounts',
             description: 'List all Facebook ad accounts accessible with the provided credentials',
@@ -72,6 +90,17 @@ class FacebookAdsMCPServer {
 
       try {
         switch (name) {
+          case 'facebook_login':
+            // Start OAuth flow and wait for completion
+            await facebookLogin(args);
+            return await completeFacebookLogin();
+
+          case 'facebook_logout':
+            return await facebookLogout(args);
+
+          case 'facebook_check_auth':
+            return await facebookCheckAuth(args);
+
           case 'facebook_list_ad_accounts':
             return await listAdAccounts(args);
 

@@ -193,7 +193,8 @@ const debugInfo = {
 
 ### Version 2.1.0 (Current)
 - ✅ **NEW: Multi-dimensional breakdown implementation** - Campaign+Date, Age+Date, Placement+Date combinations
-- ✅ **NEW: Fixed duplicate output bug** - Eliminated multiple sections for same data  
+- ✅ **NEW: Fixed duplicate output bug** - Eliminated multiple sections for same data
+- ✅ **NEW: Removed auto time_increment behavior** - Users must explicitly request daily breakdowns
 - ✅ Added automatic conversions field enhancement
 - ✅ Implemented time increment support for daily breakdowns
 - ✅ Enhanced breakdown response formatting

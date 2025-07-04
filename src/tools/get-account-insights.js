@@ -29,11 +29,8 @@ export async function getAccountInsights(args) {
       debugInfo.enhancedFields = enhancedFields;
     }
     
-    // Auto-add time_increment for daily data when time_range is specified
+    // Use parameters as provided - user must explicitly specify time_increment for daily breakdown
     let finalParams = { ...otherParams };
-    if (otherParams.time_range && !finalParams.time_increment) {
-      finalParams.time_increment = 1; // Daily breakdown
-    }
 
     const insightsParams = {
       fields: enhancedFields.join(','),

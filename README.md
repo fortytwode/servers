@@ -194,11 +194,16 @@ Retrieves performance insights for a specified Facebook ad account.
 - `fields` (array, required): Performance metrics to retrieve
 - `date_preset` (string, optional): Predefined time range (last_7d, last_30d, etc.)
 - `level` (string, optional): Aggregation level (account, campaign, adset, ad)
+- `breakdowns` (array, optional): Result breakdown dimensions (placement, age, gender, country, etc.)
+- `action_breakdowns` (array, optional): Breakdown dimensions for actions/conversions
 - `time_range` (object, optional): Custom time range with since/until dates
+- `time_increment` (string/number, optional): Time aggregation period (1=daily, 7=weekly, "monthly"=monthly)
 - `limit` (number, optional): Maximum results per page
 - `after`/`before` (string, optional): Pagination cursors
 
-**Example:**
+**Examples:**
+
+*Basic Performance Data:*
 ```javascript
 {
   "act_id": "act_1234567890",
@@ -207,6 +212,63 @@ Retrieves performance insights for a specified Facebook ad account.
   "level": "campaign"
 }
 ```
+
+*Performance by Placement with Conversions:*
+```javascript
+{
+  "act_id": "act_1234567890", 
+  "fields": ["spend", "actions", "conversions", "cost_per_action_type"],
+  "breakdowns": ["placement"],
+  "action_breakdowns": ["action_type"],
+  "date_preset": "last_7d"
+}
+```
+
+*Demographic Analysis (Age/Gender):*  
+```javascript
+{
+  "act_id": "act_1234567890",
+  "fields": ["spend", "actions", "conversions"],
+  "breakdowns": ["age", "gender"], 
+  "action_breakdowns": ["action_type"],
+  "date_preset": "last_7d"
+}
+```
+
+*Daily Performance Breakdown:*
+```javascript
+{
+  "act_id": "act_1234567890",
+  "fields": ["spend", "actions", "conversions", "date_start", "date_stop"],
+  "time_increment": 1,  // 1 = daily breakdown
+  "date_preset": "last_30d"
+}
+```
+
+#### **🎯 Enhanced Conversion Tracking**
+This tool automatically enhances conversion tracking by:
+
+**Problem Solved**: Custom events like `start_trial` often don't appear in the Facebook API's `actions` field but are available in the `conversions` field. Previously, requests for only `actions` would miss conversion events, leading to incomplete data.
+
+**Solution**: When you request the `actions` field, the system automatically includes `conversions` as well, then uses a priority system:
+1. **Priority 1**: Checks `conversions` field (higher fidelity data)
+2. **Priority 2**: Falls back to `actions` field if conversion data unavailable
+3. **Priority 3**: Reports no match found
+
+**Example with Auto-Enhancement**:
+```javascript
+// Your request:
+{
+  "fields": ["spend", "actions"]
+}
+
+// Automatically becomes:
+{
+  "fields": ["spend", "actions", "conversions"]  // conversions auto-added
+}
+```
+
+This ensures you capture conversion events like `start_trial`, `purchase`, and custom events that might only exist in the conversions field.
 
 ### 5. facebook_get_activities_by_adaccount
 
@@ -471,6 +533,18 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 | Notion Reports | High | Medium | Medium | **8.5/10** |
 | OpenAI/Gemini | Medium | High | Medium | **6.5/10** |
 | Video Support | Medium | High | Low | **5.0/10** |
+
+## 📚 Documentation
+
+### **For AI Assistants & Users**
+- **[AI Prompting Guide](./docs/PROMPTING-GUIDE.md)**: How to effectively use Facebook Ads tools without limitations
+- **[API Capabilities Reference](./docs/API-CAPABILITIES.md)**: Complete breakdown and analysis capabilities
+
+### **Technical Documentation**
+- **[Technical Architecture & API Documentation](./docs/README.md)**: Comprehensive system design and implementation details
+- **[Recent Improvements & Enhancements](./docs/IMPROVEMENTS.md)**: Latest features and future roadmap
+- **[Developer Diagnostic Guide](./docs/DEVELOPER-DIAGNOSTIC-GUIDE.md)**: Troubleshooting and debugging
+- **[Universal Server Implementation](./docs/UNIVERSAL-SERVER.md)**: Multi-protocol server support
 
 ### 🤝 Contributing
 

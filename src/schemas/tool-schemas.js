@@ -115,6 +115,10 @@ export const TOOL_SCHEMAS = {
         type: 'string',
         description: 'Pagination cursor for previous page',
       },
+      time_increment: {
+        type: ['string', 'number'],
+        description: 'Time aggregation period. Use 1 for daily, 7 for weekly, monthly for monthly breakdowns',
+      },
     },
     required: ['act_id', 'fields'],
     additionalProperties: false,

@@ -2,98 +2,6 @@ import { FacebookAPIClient } from '../utils/facebook-api.js';
 import { createErrorResponse } from '../utils/error-handler.js';
 import { ValidationSchemas, validateParameters } from '../utils/validation.js';
 
-/**
- * Universal Event Detection Logic
- * Maps adset configurations to actual performance data to prevent event hallucination
- */
-
-// Event name mapping for different Facebook conventions
-const EVENT_NAME_MAPPINGS = {
-  'START_TRIAL': ['start_trial', 'start_trial_total', 'start_trial_website', 'offsite_conversion.fb_pixel_custom'],
-  'PURCHASE': ['purchase', 'offsite_conversion.fb_pixel_purchase', 'web_in_store_purchase', 'onsite_web_purchase'],
-  'LEAD': ['complete_registration', 'offsite_conversion.fb_pixel_complete_registration', 'lead'],
-  'APP_INSTALL': ['app_install', 'mobile_app_install'],
-  'SUBSCRIPTION': ['subscribe', 'subscription', 'start_subscription'],
-  'VIEW_CONTENT': ['view_content', 'offsite_conversion.fb_pixel_view_content'],
-  'ADD_TO_CART': ['add_to_cart', 'offsite_conversion.fb_pixel_add_to_cart'],
-  'INITIATE_CHECKOUT': ['initiate_checkout', 'offsite_conversion.fb_pixel_initiate_checkout']
-};
-
-function determineTargetEvent(adset) {
-  // Step 2: Map Target Events by Adset
-  if (adset.promoted_object && adset.promoted_object.custom_event_type) {
-    return adset.promoted_object.custom_event_type; // e.g., "START_TRIAL"
-  }
-  
-  // Map optimization goals to expected events
-  const optimizationMapping = {
-    'OFFSITE_CONVERSIONS': 'CUSTOM_EVENT', // Will need to check promoted_object
-    'PURCHASES': 'PURCHASE',
-    'LEADS': 'LEAD', 
-    'APP_INSTALLS': 'APP_INSTALL',
-    'LINK_CLICKS': 'LINK_CLICK',
-    'LANDING_PAGE_VIEWS': 'LANDING_PAGE_VIEW',
-    'POST_ENGAGEMENT': 'POST_ENGAGEMENT'
-  };
-  
-  return optimizationMapping[adset.optimization_goal] || 'UNKNOWN';
-}
-
-function findEventInData(targetEvent, actionsData, conversionsData = null) {
-  // Step 3: Universal Event Detection with Priority System
-  
-  // Priority 1: Check conversions field (higher fidelity)
-  if (conversionsData && conversionsData.length > 0) {
-    const conversionMatch = conversionsData.find(conv => 
-      matchesEventType(targetEvent, conv.action_type)
-    );
-    if (conversionMatch) {
-      return { source: 'conversions', data: conversionMatch, priority: 1 };
-    }
-  }
-  
-  // Priority 2: Check actions field (fallback)
-  if (actionsData && actionsData.length > 0) {
-    const actionMatch = actionsData.find(action => 
-      matchesEventType(targetEvent, action.action_type)
-    );
-    if (actionMatch) {
-      return { source: 'actions', data: actionMatch, priority: 2 };
-    }
-  }
-  
-  // Priority 3: No match found
-  return { source: 'none', data: null, priority: 3 };
-}
-
-function matchesEventType(targetEvent, actualEventType) {
-  // Step 4: Event Name Mapping
-  
-  // Direct match
-  if (targetEvent === actualEventType) {
-    return true;
-  }
-  
-  // Check mapped variations
-  const mappings = EVENT_NAME_MAPPINGS[targetEvent] || [];
-  return mappings.some(mapping => 
-    actualEventType.includes(mapping) || mapping.includes(actualEventType)
-  );
-}
-
-async function fetchAdsetConfigurations(client, actId) {
-  // Step 1: Get adset configuration
-  try {
-    const adsetsData = await client.makeRequest(`/${actId}/adsets`, {
-      fields: 'name,optimization_goal,promoted_object,status',
-      limit: 100 // Get active adsets
-    });
-    return adsetsData.data || [];
-  } catch (error) {
-    console.warn('Could not fetch adset configurations:', error.message);
-    return [];
-  }
-}
 
 export async function getAccountInsights(args) {
   try {
@@ -104,10 +12,33 @@ export async function getAccountInsights(args) {
     const client = new FacebookAPIClient();
     
     // Step 1: Query Performance Data + Configuration
+    // Automatically include 'conversions' when 'actions' is requested for better conversion tracking
+    let enhancedFields = [...fields];
+    
+    // Log to both stderr and return in response for debugging
+    const debugInfo = {
+      originalFields: fields,
+      includesActions: fields.includes('actions'),
+      includesConversions: fields.includes('conversions'),
+      willEnhance: fields.includes('actions') && !fields.includes('conversions')
+    };
+    
+    if (fields.includes('actions') && !fields.includes('conversions')) {
+      enhancedFields.push('conversions');
+      debugInfo.addedConversions = true;
+      debugInfo.enhancedFields = enhancedFields;
+    }
+    
+    // Auto-add time_increment for daily data when time_range is specified
+    let finalParams = { ...otherParams };
+    if (otherParams.time_range && !finalParams.time_increment) {
+      finalParams.time_increment = 1; // Daily breakdown
+    }
+
     const insightsParams = {
-      fields: fields.join(','),
+      fields: enhancedFields.join(','),
       level: level || 'account', // Default to account level
-      ...otherParams,
+      ...finalParams,
     };
 
     // Remove undefined/null values and format arrays
@@ -121,27 +52,22 @@ export async function getAccountInsights(args) {
 
     // Get performance data
     const insightsData = await client.makeRequest(`/${act_id}/insights`, insightsParams);
-    
-    // Get adset configurations if we're analyzing events
-    const includesActions = fields.includes('actions') || fields.includes('conversions');
-    let adsetConfigs = [];
-    if (includesActions) {
-      adsetConfigs = await fetchAdsetConfigurations(client, act_id);
-    }
 
     // Format response with universal event detection
     let responseText = '';
     
     if (insightsData.data && insightsData.data.length > 0) {
-      responseText += await formatInsightsWithEventDetection(
+      responseText += formatInsightsWithBreakdowns(
         insightsData.data, 
-        adsetConfigs, 
-        level || 'account'
+        level || 'account',
+        validatedArgs
       );
       
+      responseText += `\n\n**Debug Info:**\n\`\`\`json\n${JSON.stringify(debugInfo, null, 2)}\n\`\`\``;
       responseText += `\n\n**Raw API Response:**\n\`\`\`json\n${JSON.stringify(insightsData, null, 2)}\n\`\`\``;
     } else {
-      responseText = `No insights data found.\n\n**Raw API Response:**\n\`\`\`json\n${JSON.stringify(insightsData, null, 2)}\n\`\`\``;
+      responseText = `No insights data found.\n\n**Debug Info:**\n\`\`\`json\n${JSON.stringify(debugInfo, null, 2)}\n\`\`\``;
+      responseText += `\n\n**Raw API Response:**\n\`\`\`json\n${JSON.stringify(insightsData, null, 2)}\n\`\`\``;
     }
 
     return {
@@ -157,89 +83,370 @@ export async function getAccountInsights(args) {
   }
 }
 
-async function formatInsightsWithEventDetection(insightsData, adsetConfigs, level) {
+
+function formatInsightsWithBreakdowns(insightsData, level, requestParams) {
   let responseText = '';
   
-  if (level === 'adset' && adsetConfigs.length > 0) {
-    // Adset-level analysis with configuration mapping
-    responseText += `🎯 **Universal Event Detection Results:**\n\n`;
+  // Detect breakdown dimensions from the data
+  const breakdownFields = detectBreakdownFields(insightsData);
+  const hasBreakdowns = breakdownFields.length > 0;
+  
+  if (hasBreakdowns) {
+    responseText += `📊 **Performance Data with Breakdowns:**\n\n`;
+    responseText += `🔍 **Breakdown Dimensions:** ${breakdownFields.join(', ')}\n\n`;
     
-    insightsData.forEach((insight, index) => {
-      const adsetConfig = adsetConfigs.find(config => 
-        config.name === insight.adset_name || config.id === insight.adset_id
-      );
-      
-      responseText += `**${index + 1}. ${insight.adset_name || 'Unknown Adset'}**\n`;
-      
-      if (adsetConfig) {
-        const targetEvent = determineTargetEvent(adsetConfig);
-        responseText += `   • Target Event: ${targetEvent}\n`;
-        
-        const eventResult = findEventInData(
-          targetEvent, 
-          insight.actions, 
-          insight.conversions
-        );
-        
-        if (eventResult.source !== 'none') {
-          responseText += `   • ✅ **Found**: ${eventResult.data.action_type} = ${eventResult.data.value}\n`;
-          responseText += `   • Source: ${eventResult.source} (Priority ${eventResult.priority})\n`;
-        } else {
-          responseText += `   • ⚠️ **Missing**: No ${targetEvent} events found in performance data\n`;
-          responseText += `   • Status: Configured but not converting\n`;
-        }
-      } else {
-        responseText += `   • ℹ️ Configuration not available\n`;
-      }
-      responseText += `\n`;
-    });
+    // Show breakdown data - prioritize time-based multi-dimensional display
+    if (breakdownFields.includes('date_start')) {
+      responseText += formatTimeBasedBreakdown(insightsData, breakdownFields);
+    } else {
+      // Any other single dimension breakdown
+      responseText += formatGenericBreakdown(insightsData, breakdownFields);
+    }
+    
   } else {
-    // Account/Campaign level - show all available events
-    const allInsights = insightsData[0]; // Usually single record for account level
-    
-    if (allInsights.actions && Array.isArray(allInsights.actions)) {
-      responseText += `📊 **Available Conversion Events:**\n\n`;
-      
-      allInsights.actions.forEach((action, index) => {
-        responseText += `${index + 1}. **${action.action_type}**\n`;
-        responseText += `   • Volume: ${action.value}\n`;
-        
-        // Show which adsets target this event
-        const targetingAdsets = adsetConfigs.filter(config => {
-          const targetEvent = determineTargetEvent(config);
-          return matchesEventType(targetEvent, action.action_type);
-        });
-        
-        if (targetingAdsets.length > 0) {
-          responseText += `   • 🎯 Targeted by: ${targetingAdsets.map(a => a.name).join(', ')}\n`;
-        }
-        
-        responseText += `\n`;
-      });
-    }
-    
-    // Show configured but missing events
-    if (adsetConfigs.length > 0) {
-      const configuredEvents = new Set(adsetConfigs.map(config => determineTargetEvent(config)));
-      const availableEvents = allInsights.actions ? 
-        allInsights.actions.map(action => action.action_type) : [];
-      
-      const missingEvents = Array.from(configuredEvents).filter(targetEvent => {
-        return !availableEvents.some(available => matchesEventType(targetEvent, available));
-      });
-      
-      if (missingEvents.length > 0) {
-        responseText += `\n⚠️ **Configured but Missing Events:**\n`;
-        missingEvents.forEach(event => {
-          const affectedAdsets = adsetConfigs.filter(config => 
-            determineTargetEvent(config) === event
-          );
-          responseText += `• **${event}**: ${affectedAdsets.map(a => a.name).join(', ')}\n`;
-        });
-        responseText += `\nThese adsets are targeting events that aren't being tracked.\n`;
-      }
-    }
+    // No breakdowns - use original event detection logic
+    responseText += formatSimpleInsights(insightsData);
   }
   
   return responseText;
+}
+
+function detectBreakdownFields(insightsData) {
+  if (!insightsData || insightsData.length === 0) return [];
+  
+  const firstRow = insightsData[0];
+  const potentialBreakdownFields = [
+    'date_start', 'date_stop', 'placement', 'age', 'gender', 'country', 'region',
+    'device_platform', 'publisher_platform', 'platform_position', 'impression_device',
+    'product_id', 'dma'
+  ];
+  
+  return potentialBreakdownFields.filter(field => firstRow.hasOwnProperty(field));
+}
+
+function groupBy(array, key) {
+  return array.reduce((groups, item) => {
+    const value = item[key];
+    if (!groups[value]) groups[value] = [];
+    groups[value].push(item);
+    return groups;
+  }, {});
+}
+
+function formatTimeBasedBreakdown(data, breakdownFields) {
+  const nonTimeFields = breakdownFields.filter(f => !['date_start', 'date_stop'].includes(f));
+  
+  if (nonTimeFields.length === 0) {
+    // Pure daily breakdown - use existing function
+    return formatDailyBreakdown(data);
+  }
+  
+  // Multi-dimensional with time - group by date, then show other dimensions
+  const dateGroups = groupBy(data, 'date_start');
+  let responseText = `📅 **Daily Performance`;
+  
+  if (nonTimeFields.length > 0) {
+    responseText += ` by ${nonTimeFields.join(' × ')}`;
+  }
+  responseText += `:**\n\n`;
+  
+  Object.keys(dateGroups).sort().forEach(date => {
+    const dayData = dateGroups[date];
+    const dateEnd = dayData[0]?.date_stop;
+    
+    // Show date header
+    if (date === dateEnd) {
+      responseText += `**${date}:**\n`;
+    } else {
+      responseText += `**${date} to ${dateEnd}:**\n`;
+    }
+    
+    // Show each row with its breakdown dimensions
+    dayData.forEach(row => {
+      const dimensions = nonTimeFields
+        .map(field => `${field}: ${row[field]}`)
+        .join(', ');
+      
+      responseText += `  ${dimensions} - `;
+      responseText += formatRowMetrics(row, '').replace(/\n/g, ', ').trim().replace(/,$/, '') + '\n';
+      
+      // Show conversion summary for this row
+      const conversionSummary = getConversionSummary([row]);
+      if (conversionSummary) {
+        responseText += `    🎯 Conversions: ${conversionSummary}\n`;
+      }
+    });
+    responseText += '\n';
+  });
+  
+  return responseText;
+}
+
+function formatDailyBreakdown(insightsData) {
+  let responseText = `📅 **Daily Performance Breakdown:**\n\n`;
+  
+  // Group by date
+  const dailyData = insightsData.reduce((acc, row) => {
+    const date = row.date_start;
+    if (!acc[date]) acc[date] = [];
+    acc[date].push(row);
+    return acc;
+  }, {});
+  
+  // Sort dates
+  const sortedDates = Object.keys(dailyData).sort();
+  
+  // Check if we have actual daily data or aggregated data
+  const hasMultipleDates = sortedDates.length > 1;
+  const firstRowDateRange = insightsData[0]?.date_start === insightsData[0]?.date_stop;
+  
+  if (!hasMultipleDates && !firstRowDateRange) {
+    responseText += `⚠️ **Note:** Data appears to be aggregated over the entire date range rather than broken down daily.\n`;
+    responseText += `To get daily breakdowns, ensure time_increment=1 is included in your request.\n\n`;
+  }
+  
+  sortedDates.forEach(date => {
+    const dayData = dailyData[date];
+    const dateEnd = dayData[0]?.date_stop;
+    
+    if (date === dateEnd) {
+      responseText += `**${date}:**\n`;
+    } else {
+      responseText += `**${date} to ${dateEnd}:**\n`;
+    }
+    
+    // Aggregate metrics for this date group if multiple rows
+    if (dayData.length > 1) {
+      const aggregated = aggregateMetrics(dayData);
+      responseText += formatRowMetrics(aggregated, '  ');
+      
+      // Show conversion summary
+      const conversionSummary = getConversionSummary(dayData);
+      if (conversionSummary) {
+        responseText += `  🎯 **Conversions:** ${conversionSummary}\n`;
+      }
+    } else {
+      responseText += formatRowMetrics(dayData[0], '  ');
+      
+      // Show conversion summary
+      const conversionSummary = getConversionSummary(dayData);
+      if (conversionSummary) {
+        responseText += `  🎯 **Conversions:** ${conversionSummary}\n`;
+      }
+    }
+    responseText += `\n`;
+  });
+  
+  return responseText;
+}
+
+function formatPlacementBreakdown(insightsData) {
+  let responseText = `📱 **Placement Performance Breakdown:**\n\n`;
+  
+  // Group by placement
+  const placementData = insightsData.reduce((acc, row) => {
+    const placement = row.placement || 'Unknown';
+    if (!acc[placement]) acc[placement] = [];
+    acc[placement].push(row);
+    return acc;
+  }, {});
+  
+  // Sort by spend (descending)
+  const sortedPlacements = Object.keys(placementData).sort((a, b) => {
+    const spendA = placementData[a].reduce((sum, row) => sum + parseFloat(row.spend || 0), 0);
+    const spendB = placementData[b].reduce((sum, row) => sum + parseFloat(row.spend || 0), 0);
+    return spendB - spendA;
+  });
+  
+  sortedPlacements.forEach(placement => {
+    const placementRows = placementData[placement];
+    responseText += `**${placement}:**\n`;
+    
+    // Aggregate metrics for this placement
+    const aggregated = aggregateMetrics(placementRows);
+    responseText += formatRowMetrics(aggregated, '  ');
+    
+    // Show conversion events if available
+    const conversionSummary = getConversionSummary(placementRows);
+    if (conversionSummary) {
+      responseText += `  🎯 **Conversions:** ${conversionSummary}\n`;
+    }
+    
+    responseText += `\n`;
+  });
+  
+  return responseText;
+}
+
+function formatDemographicBreakdown(insightsData) {
+  let responseText = `👥 **Demographic Performance Breakdown:**\n\n`;
+  
+  // Group by age and/or gender
+  const demoData = insightsData.reduce((acc, row) => {
+    const age = row.age || 'Unknown Age';
+    const gender = row.gender || 'Unknown Gender';
+    const key = `${age} - ${gender}`;
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(row);
+    return acc;
+  }, {});
+  
+  // Sort by spend (descending)
+  const sortedDemos = Object.keys(demoData).sort((a, b) => {
+    const spendA = demoData[a].reduce((sum, row) => sum + parseFloat(row.spend || 0), 0);
+    const spendB = demoData[b].reduce((sum, row) => sum + parseFloat(row.spend || 0), 0);
+    return spendB - spendA;
+  });
+  
+  sortedDemos.forEach(demo => {
+    const demoRows = demoData[demo];
+    responseText += `**${demo}:**\n`;
+    
+    // Aggregate metrics for this demographic
+    const aggregated = aggregateMetrics(demoRows);
+    responseText += formatRowMetrics(aggregated, '  ');
+    
+    // Show conversion events if available
+    const conversionSummary = getConversionSummary(demoRows);
+    if (conversionSummary) {
+      responseText += `  🎯 **Conversions:** ${conversionSummary}\n`;
+    }
+    
+    responseText += `\n`;
+  });
+  
+  return responseText;
+}
+
+function formatGenericBreakdown(insightsData, breakdownFields) {
+  let responseText = `📊 **Custom Breakdown Results:**\n\n`;
+  
+  insightsData.forEach((row, index) => {
+    responseText += `**Row ${index + 1}:**\n`;
+    
+    // Show breakdown dimensions
+    breakdownFields.forEach(field => {
+      if (row[field] !== undefined) {
+        responseText += `  ${field}: ${row[field]}\n`;
+      }
+    });
+    
+    // Show metrics
+    responseText += formatRowMetrics(row, '  ');
+    
+    // Show conversion events if available
+    const conversionSummary = getConversionSummary([row]);
+    if (conversionSummary) {
+      responseText += `  🎯 **Conversions:** ${conversionSummary}\n`;
+    }
+    
+    responseText += `\n`;
+  });
+  
+  return responseText;
+}
+
+function formatSimpleInsights(insightsData) {
+  let responseText = '📊 **Account Performance:**\n\n';
+  
+  // Guard against empty data
+  if (!insightsData || insightsData.length === 0) {
+    return responseText + 'No data available.\n';
+  }
+  
+  const data = insightsData[0];
+  responseText += formatRowMetrics(data);
+  
+  // Show conversion events if available
+  if (data && data.actions && Array.isArray(data.actions)) {
+    responseText += '\n**Conversion Events:**\n';
+    data.actions.forEach(action => {
+      responseText += `• ${action.action_type}: ${action.value}\n`;
+    });
+  }
+  
+  return responseText;
+}
+
+function formatRowMetrics(row, indent = '') {
+  let text = '';
+  
+  // Guard against null/undefined row
+  if (!row) return text;
+  
+  // Core metrics with null safety
+  if (row.spend != null) text += `${indent}💰 Spend: $${parseFloat(row.spend || 0).toFixed(2)}\n`;
+  if (row.impressions != null) text += `${indent}👁️ Impressions: ${parseInt(row.impressions || 0).toLocaleString()}\n`;
+  if (row.clicks != null) text += `${indent}🖱️ Clicks: ${parseInt(row.clicks || 0).toLocaleString()}\n`;
+  if (row.ctr != null) text += `${indent}📊 CTR: ${parseFloat(row.ctr || 0).toFixed(2)}%\n`;
+  if (row.cpc != null) text += `${indent}💸 CPC: $${parseFloat(row.cpc || 0).toFixed(2)}\n`;
+  if (row.cpm != null) text += `${indent}📈 CPM: $${parseFloat(row.cpm || 0).toFixed(2)}\n`;
+  
+  return text;
+}
+
+function aggregateMetrics(rows) {
+  const aggregated = {
+    spend: 0,
+    impressions: 0,
+    clicks: 0,
+    actions: [],
+    conversions: []
+  };
+  
+  rows.forEach(row => {
+    aggregated.spend += parseFloat(row.spend || 0);
+    aggregated.impressions += parseInt(row.impressions || 0);
+    aggregated.clicks += parseInt(row.clicks || 0);
+    
+    if (row.actions) {
+      aggregated.actions = aggregated.actions.concat(row.actions);
+    }
+    if (row.conversions) {
+      aggregated.conversions = aggregated.conversions.concat(row.conversions);
+    }
+  });
+  
+  // Calculate derived metrics
+  if (aggregated.impressions > 0) {
+    aggregated.ctr = (aggregated.clicks / aggregated.impressions * 100).toFixed(2);
+    aggregated.cpm = (aggregated.spend / aggregated.impressions * 1000).toFixed(2);
+  }
+  if (aggregated.clicks > 0) {
+    aggregated.cpc = (aggregated.spend / aggregated.clicks).toFixed(2);
+  }
+  
+  return aggregated;
+}
+
+function getConversionSummary(rows) {
+  const conversionCounts = {};
+  
+  rows.forEach(row => {
+    // Process conversions (higher priority)
+    if (row.conversions && Array.isArray(row.conversions)) {
+      row.conversions.forEach(conv => {
+        const type = conv.action_type;
+        conversionCounts[type] = (conversionCounts[type] || 0) + parseFloat(conv.value || 0);
+      });
+    }
+    
+    // Process actions (fallback)
+    if (row.actions && Array.isArray(row.actions)) {
+      row.actions.forEach(action => {
+        const type = action.action_type;
+        // Only add if not already in conversions
+        if (!conversionCounts[type]) {
+          conversionCounts[type] = (conversionCounts[type] || 0) + parseFloat(action.value || 0);
+        }
+      });
+    }
+  });
+  
+  const conversionEntries = Object.entries(conversionCounts).filter(([type, count]) => count > 0);
+  if (conversionEntries.length === 0) return null;
+  
+  return conversionEntries
+    .map(([type, count]) => `${type}: ${count}`)
+    .join(', ');
 }

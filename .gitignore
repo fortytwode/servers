@@ -6,4 +6,4 @@ dist/
 coverage/
 .nyc_output/
 .tmp/
-temp/
+temp/cache/

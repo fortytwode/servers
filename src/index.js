@@ -12,7 +12,6 @@ import { getAccountDetails } from './tools/get-account-details.js';
 import { getAccountInsights } from './tools/get-account-insights.js';
 import { getAccountActivities } from './tools/get-account-activities.js';
 import { getAdCreatives } from './tools/get-ad-creatives.js';
-import { getAdThumbnailsEmbedded } from './tools/get-ad-thumbnails-embedded.js';
 import { facebookLogin } from './tools/facebook-login.js';
 import { facebookLogout } from './tools/facebook-logout.js';
 import { facebookCheckAuth } from './tools/facebook-check-auth.js';
@@ -84,13 +83,8 @@ class FacebookAdsMCPServer {
           },
           {
             name: 'facebook_get_ad_creatives',
-            description: 'Get high-performing ad creatives with thumbnails and performance metrics',
+            description: 'Get creative assets (images, headlines, body text) for specific ad IDs',
             inputSchema: TOOL_SCHEMAS.facebook_get_ad_creatives,
-          },
-          {
-            name: 'facebook_get_ad_thumbnails',
-            description: 'Get thumbnails with embedded images and caching for reliable cross-platform display',
-            inputSchema: TOOL_SCHEMAS.facebook_get_ad_thumbnails,
           },
         ],
       };
@@ -126,11 +120,9 @@ class FacebookAdsMCPServer {
           case 'facebook_get_activities_by_adaccount':
             return await getAccountActivities(args);
 
+
           case 'facebook_get_ad_creatives':
             return await getAdCreatives(args);
-
-          case 'facebook_get_ad_thumbnails':
-            return await getAdThumbnailsEmbedded(args);
 
           default:
             throw new Error(`Unknown tool: ${name}`);

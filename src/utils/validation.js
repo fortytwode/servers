@@ -45,27 +45,10 @@ export const ValidationSchemas = {
   }),
 
   adCreatives: z.object({
-    act_id: z.string().min(1, 'act_id is required'),
-    min_purchase_events: z.number().optional(),
-    max_cost_per_purchase: z.number().optional(),
-    include_images: z.boolean().optional(),
-    date_range_days: z.number().optional(),
-    limit: z.number().optional(),
+    ad_ids: z.array(z.string()).min(1).max(50),
+    include_images: z.boolean().default(true)
   }),
 
-  adThumbnails: z.object({
-    ad_ids: z.array(z.string()).min(1, 'At least one ad ID is required'),
-    resolution: z.enum(['thumbnail', 'full', 'all']).optional(),
-    include_ad_details: z.boolean().optional(),
-  }),
-
-  adThumbnailsEmbedded: z.object({
-    ad_ids: z.array(z.string()).min(1, 'At least one ad ID is required'),
-    resolution: z.enum(['thumbnail', 'full', 'all']).optional(),
-    include_ad_details: z.boolean().optional(),
-    cache_duration_hours: z.number().min(1).max(168).optional(), // 1 hour to 1 week
-    max_image_size_mb: z.number().min(0.1).max(10).optional(), // 100KB to 10MB
-  }),
 
   // AppsFlyer validation schemas
   appsflyerCheckAuth: z.object({

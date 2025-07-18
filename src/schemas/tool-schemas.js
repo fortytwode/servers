@@ -172,66 +172,21 @@ export const TOOL_SCHEMAS = {
   facebook_get_ad_creatives: {
     type: 'object',
     properties: {
-      act_id: {
-        type: 'string',
-        description: 'The ad account ID, prefixed with act_',
-      },
-      min_purchase_events: {
-        type: 'number',
-        description: 'Minimum number of fb_mobile_purchase events required (default: 10)',
-      },
-      max_cost_per_purchase: {
-        type: 'number',
-        description: 'Maximum cost per purchase threshold (default: 50)',
-      },
-      include_images: {
-        type: 'boolean',
-        description: 'Whether to include thumbnail URLs (default: true)',
-      },
-      date_range_days: {
-        type: 'number',
-        description: 'Number of days to look back for performance data (default: 730)',
-      },
-      limit: {
-        type: 'number',
-        description: 'Maximum number of ads to analyze (default: 50)',
-      },
-    },
-    required: ['act_id'],
-    additionalProperties: false,
-  },
-
-  facebook_get_ad_thumbnails: {
-    type: 'object',
-    properties: {
       ad_ids: {
         type: 'array',
         items: { type: 'string' },
-        description: 'Array of Facebook ad IDs to get thumbnails for',
+        description: 'Array of Facebook ad IDs to get creatives for',
+        minItems: 1,
+        maxItems: 50
       },
-      resolution: {
-        type: 'string',
-        enum: ['thumbnail', 'full', 'all'],
-        description: 'Resolution preference: "thumbnail" (64x64), "full" (original), or "all" (both)',
-      },
-      include_ad_details: {
+      include_images: {
         type: 'boolean',
-        description: 'Whether to include additional ad details like dynamic creative info (default: true)',
-      },
-      cache_duration_hours: {
-        type: 'number',
-        minimum: 1,
-        maximum: 168,
-        description: 'How long to cache images in hours (1-168, default: 24)',
-      },
-      max_image_size_mb: {
-        type: 'number',
-        minimum: 0.1,
-        maximum: 10,
-        description: 'Maximum image size to download in MB (0.1-10, default: 5)',
-      },
+        default: true,
+        description: 'Whether to download and embed images as base64'
+      }
     },
     required: ['ad_ids'],
     additionalProperties: false,
   },
+
 };

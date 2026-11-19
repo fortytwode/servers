@@ -19,6 +19,7 @@ import { diffLines, createTwoFilesPatch } from 'diff';
 import { minimatch } from 'minimatch';
 import { isPathWithinAllowedDirectories } from './path-validation.js';
 import { getValidRootDirectories } from './roots-utils.js';
+import { openFileForReading, readFileInDirectory, validateWindowsReadPath } from './pinned-directory.js';
 
 // Command line argument parsing
 const args = process.argv.slice(2);
@@ -113,6 +114,14 @@ async function validatePath(requestedPath: string): Promise<string> {
     }
     throw error;
   }
+}
+
+async function validateReadPath(requestedPath: string): Promise<string> {
+  const absolute = path.resolve(expandHome(requestedPath));
+  validateWindowsReadPath(absolute);
+  const realPath = await validatePath(absolute);
+  validateWindowsReadPath(realPath);
+  return realPath;
 }
 
 // Schema definitions
@@ -286,7 +295,7 @@ async function applyFileEdits(
   dryRun = false
 ): Promise<string> {
   // Read file content and normalize line endings
-  const content = normalizeLineEndings(await fs.readFile(filePath, 'utf-8'));
+  const content = normalizeLineEndings((await readFileInDirectory(filePath)).toString('utf-8'));
 
   // Apply edits sequentially
   let modifiedContent = content;
@@ -384,14 +393,11 @@ function formatSize(bytes: number): string {
 // Memory-efficient implementation to get the last N lines of a file
 async function tailFile(filePath: string, numLines: number): Promise<string> {
   const CHUNK_SIZE = 1024; // Read 1KB at a time
-  const stats = await fs.stat(filePath);
-  const fileSize = stats.size;
-  
-  if (fileSize === 0) return '';
-  
-  // Open file for reading
-  const fileHandle = await fs.open(filePath, 'r');
+  const fileHandle = await openFileForReading(filePath);
   try {
+    const fileSize = fileHandle.size;
+    if (fileSize === 0) return '';
+
     const lines: string[] = [];
     let position = fileSize;
     let chunk = Buffer.alloc(CHUNK_SIZE);
@@ -435,7 +441,7 @@ async function tailFile(filePath: string, numLines: number): Promise<string> {
 
 // New function to get the first N lines of a file
 async function headFile(filePath: string, numLines: number): Promise<string> {
-  const fileHandle = await fs.open(filePath, 'r');
+  const fileHandle = await openFileForReading(filePath);
   try {
     const lines: string[] = [];
     let buffer = '';
@@ -602,7 +608,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         if (!parsed.success) {
           throw new Error(`Invalid arguments for read_file: ${parsed.error}`);
         }
-        const validPath = await validatePath(parsed.data.path);
+        const validPath = await validateReadPath(parsed.data.path);
         
         if (parsed.data.head && parsed.data.tail) {
           throw new Error("Cannot specify both head and tail parameters simultaneously");
@@ -624,7 +630,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           };
         }
         
-        const content = await fs.readFile(validPath, "utf-8");
+        const content = (await readFileInDirectory(validPath)).toString("utf-8");
         return {
           content: [{ type: "text", text: content }],
         };
@@ -638,8 +644,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const results = await Promise.all(
           parsed.data.paths.map(async (filePath: string) => {
             try {
-              const validPath = await validatePath(filePath);
-              const content = await fs.readFile(validPath, "utf-8");
+              const validPath = await validateReadPath(filePath);
+              const content = (await readFileInDirectory(validPath)).toString("utf-8");
               return `${filePath}:\n${content}\n`;
             } catch (error) {
               const errorMessage = error instanceof Error ? error.message : String(error);
@@ -693,7 +699,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         if (!parsed.success) {
           throw new Error(`Invalid arguments for edit_file: ${parsed.error}`);
         }
-        const validPath = await validatePath(parsed.data.path);
+        const validPath = await validateReadPath(parsed.data.path);
         const result = await applyFileEdits(validPath, parsed.data.edits, parsed.data.dryRun);
         return {
           content: [{ type: "text", text: result }],

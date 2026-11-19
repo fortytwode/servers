@@ -17,6 +17,7 @@ WORKDIR /app
 COPY --from=builder /app/dist /app/dist
 COPY --from=builder /app/package.json /app/package.json
 COPY --from=builder /app/package-lock.json /app/package-lock.json
+COPY --from=builder /app/LICENSE /app/LICENSE
 
 ENV NODE_ENV=production
 

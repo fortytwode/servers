@@ -54,11 +54,14 @@ The server's directory access control follows this flow:
    - No dynamic updates possible
 
 5. **Access Control**
-   - All filesystem operations are restricted to allowed directories
+   - The server checks requested paths against the allowed directories.
    - Use `list_allowed_directories` tool to see current directories
    - Server requires at least ONE allowed directory to operate
 
-**Note**: The server will only allow operations within directories specified either via `args` or via Roots.
+On Linux and macOS, file-content reads anchor the parent directory while opening
+the file. On Windows, the server checks the identity of the opened file. Use
+Windows roots writable only by trusted local processes because parent directories
+can change between path validation and opening.
 
 
 

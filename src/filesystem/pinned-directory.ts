@@ -120,7 +120,11 @@ function nameReadError(error: unknown, name: string, filePath: string): unknown 
   return error;
 }
 
-function openReadDescriptor(filePath: string): { fd: number; opened: fs.BigIntStats } {
+async function openReadDescriptor(filePath: string): Promise<{ fd: number; opened: fs.BigIntStats }> {
+  // Load native support before borrowing cwd. Non-read tools do not need it.
+  const verifyWindowsReadHandle = isWindows()
+    ? (await import("./windows-read-handle.js")).verifyWindowsReadHandle
+    : undefined;
   const name = path.basename(filePath);
   if (!name || (isWindows() && isWindowsUncRoot(filePath))) {
     throw directoryReadError(filePath);
@@ -147,6 +151,7 @@ function openReadDescriptor(filePath: string): { fd: number; opened: fs.BigIntSt
       if (!opened.isFile() || !isSameEntry(found, opened)) {
         throw new Error(`Refusing to read: ${filePath} was replaced while it was being opened`);
       }
+      verifyWindowsReadHandle?.(fd, filePath);
       return { fd, opened };
     } catch (error) {
       fs.closeSync(fd);
@@ -169,7 +174,7 @@ interface ReadableFile {
 
 /** Open a validated regular file and read only from its descriptor. */
 export async function openFileForReading(filePath: string): Promise<ReadableFile> {
-  const { fd, opened } = openReadDescriptor(filePath);
+  const { fd, opened } = await openReadDescriptor(filePath);
   return {
     size: Number(opened.size),
     read: (buffer, offset, length, position) => new Promise((resolve, reject) =>
@@ -182,7 +187,7 @@ export async function openFileForReading(filePath: string): Promise<ReadableFile
 }
 
 export async function readFileInDirectory(filePath: string): Promise<Buffer> {
-  const { fd } = openReadDescriptor(filePath);
+  const { fd } = await openReadDescriptor(filePath);
   try {
     return await new Promise<Buffer>((resolve, reject) =>
       fs.readFile(fd, (error, content) => error ? reject(error) : resolve(content)),

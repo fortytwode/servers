@@ -59,9 +59,10 @@ The server's directory access control follows this flow:
    - Server requires at least ONE allowed directory to operate
 
 On Linux and macOS, file-content reads anchor the parent directory while opening
-the file. On Windows, the server checks the identity of the opened file. Use
-Windows roots writable only by trusted local processes because parent directories
-can change between path validation and opening.
+the file. On Windows, the server checks the final path reported for the open file
+handle against the approved, resolved path before reading from that handle.
+Windows file reads require the packaged Koffi native binding. Include optional
+dependencies when installing the server for Windows.
 
 
 

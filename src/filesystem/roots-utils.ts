@@ -1,6 +1,7 @@
 import { promises as fs, type Stats } from 'fs';
 import path from 'path';
 import os from 'os';
+import { fileURLToPath } from 'node:url';
 import { normalizePath } from './path-utils.js';
 import type { Root } from '@modelcontextprotocol/sdk/types.js';
 
@@ -11,7 +12,19 @@ import type { Root } from '@modelcontextprotocol/sdk/types.js';
  */
 async function parseRootUri(rootUri: string): Promise<string | null> {
   try {
-    const rawPath = rootUri.startsWith('file://') ? rootUri.slice(7) : rootUri;
+    let rawPath = rootUri;
+    if (rootUri.startsWith('file://')) {
+      const filePath = rootUri.slice('file://'.length);
+      const isHomeAlias = filePath === '~' || filePath.startsWith('~/');
+      const isWindowsDrivePath = process.platform === 'win32' && /^[a-z]:[\\/]/i.test(filePath);
+      if (isHomeAlias || isWindowsDrivePath) {
+        rawPath = filePath;
+      } else {
+        const isLocal = /^(?:\/|localhost\/)/i.test(filePath);
+        if (!isLocal || /[?#]/.test(filePath)) return null;
+        rawPath = fileURLToPath(rootUri);
+      }
+    }
     const expandedPath = rawPath.startsWith('~/') || rawPath === '~' 
       ? path.join(os.homedir(), rawPath.slice(1)) 
       : rawPath;

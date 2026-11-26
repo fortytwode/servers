@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { getValidRootDirectories } from '../roots-utils.js';
 import { mkdtempSync, rmSync, mkdirSync, writeFileSync, realpathSync } from 'fs';
-import { tmpdir } from 'os';
+import { homedir, tmpdir } from 'os';
 import { join } from 'path';
+import { pathToFileURL } from 'node:url';
 import type { Root } from '@modelcontextprotocol/sdk/types.js';
 
 describe('getValidRootDirectories', () => {
@@ -43,6 +44,33 @@ describe('getValidRootDirectories', () => {
       expect(result).toContain(testDir2);
       expect(result).toContain(testDir3);
       expect(result).toHaveLength(3);
+    });
+
+    it('should decode a standard local file URI', async () => {
+      const directory = join(testDir1, 'root café #100%');
+      mkdirSync(directory);
+
+      const uri = pathToFileURL(directory).href;
+      const localHostUri = uri.replace('file:///', 'file://localhost/');
+
+      await expect(getValidRootDirectories([{ uri }, { uri: localHostUri }]))
+        .resolves.toEqual([directory, directory]);
+    });
+
+    it('should not select a different directory for a file URI with a query or fragment', async () => {
+      const directory = join(testDir1, 'plain#root');
+      mkdirSync(directory);
+      const uri = pathToFileURL(testDir1).href;
+
+      await expect(getValidRootDirectories([
+        { uri: `${uri}?raw` }, { uri: `${uri}#raw` }, { uri: directory },
+      ])).resolves.toEqual([directory]);
+    });
+
+    it('should retain home directory aliases', async () => {
+      const home = realpathSync(homedir());
+      await expect(getValidRootDirectories([{ uri: '~' }, { uri: 'file://~' }]))
+        .resolves.toEqual([home, home]);
     });
 
     it('should normalize complex paths', async () => {
